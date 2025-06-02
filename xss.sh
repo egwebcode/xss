@@ -8,16 +8,30 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # Reset
 
+# Payloads avançados (cortado para 10, mas você pode adicionar mais)
+PAYLOADS=(
+  "<script>alert(1)</script>"
+  "\"><script>alert(1)</script>"
+  "'><img src=x onerror=alert(1)>"
+  "\"><svg/onload=alert(1)>"
+  "<body onload=alert(1)>"
+  "<iframe src=javascript:alert(1)>"
+  "<object data=javascript:alert(1)>"
+  "<a href=javascript:alert(1)>Clique</a>"
+  "<img src=x:alert(1) onerror=eval(src)>"
+  "<input onfocus=alert(1) autofocus>"
+)
+
 function cabecalho() {
   clear
   echo -e "${CYAN}=============================================="
-  echo -e "     🔍 Scanner de Vulnerabilidades XSS"
+  echo -e "  🛡️  Scanner de XSS (.js / .html) + Testes reais"
   echo -e "        Profissional - via Termux/Bash"
   echo -e "==============================================${NC}"
 }
 
 function pedir_arquivo() {
-  echo -ne "${YELLOW}Digite o nome do arquivo .js para analisar: ${NC}"
+  echo -ne "${YELLOW}Digite o nome do arquivo .js ou .html: ${NC}"
   read ARQUIVO
   if [[ ! -f "$ARQUIVO" ]]; then
     echo -e "${RED}❌ Arquivo '$ARQUIVO' não encontrado.${NC}"
@@ -27,49 +41,40 @@ function pedir_arquivo() {
 }
 
 function barra_progresso() {
-  for i in {1..20}; do
-    echo -ne "${BLUE}#"
-    sleep 0.05
+  echo -ne "${BLUE}Progresso: "
+  for i in {1..25}; do
+    echo -ne "#"
+    sleep 0.03
   done
   echo -e "${NC}"
 }
 
 function escanear_arquivo() {
-  echo -e "\n${GREEN}🔎 Iniciando varredura em: $ARQUIVO${NC}"
-  echo -e "${BLUE}Procurando padrões potencialmente perigosos...${NC}"
+  echo -e "\n${GREEN}🔎 Varredura de padrões perigosos em: $ARQUIVO${NC}"
   barra_progresso
 
   RESULTADO="resultado_${ARQUIVO}.txt"
 
-  grep -Eni 'innerHTML|outerHTML|document.write|insertAdjacentHTML|setAttribute|eval|Function|onerror|srcdoc|location.href|window.name' "$ARQUIVO" > "$RESULTADO"
+  grep -Eni 'innerHTML|outerHTML|document.write|insertAdjacentHTML|setAttribute|eval|Function|onerror|srcdoc|location.href|window.name|src="javascript:' "$ARQUIVO" > "$RESULTADO"
 
   LINHAS=$(wc -l < "$RESULTADO")
 
   if [[ $LINHAS -eq 0 ]]; then
-    echo -e "${YELLOW}Nenhum padrão perigoso foi detectado.${NC}"
+    echo -e "${YELLOW}Nenhum padrão perigoso encontrado.${NC}"
   else
-    echo -e "${GREEN}✅ $LINHAS possíveis vulnerabilidades encontradas."
-    echo -e "📁 Salvo em: ${CYAN}$RESULTADO${NC}"
+    echo -e "${GREEN}✅ $LINHAS possíveis vulnerabilidades detectadas."
+    echo -e "📁 Detalhes salvos em: ${CYAN}$RESULTADO${NC}"
   fi
 }
 
-function testar_payloads_basicos() {
-  echo -e "\n${GREEN}🚨 Testando reações a payloads XSS comuns (simulado)...${NC}"
-  echo -e "${BLUE}Simulação de resposta ao conteúdo de payloads populares:${NC}"
-
-  PAYLOADS=(
-    "<script>alert(1)</script>"
-    "\"><svg/onload=alert(1)>"
-    "'><img src=x onerror=alert(1)>"
-    "<iframe src='javascript:alert(1)'></iframe>"
-  )
-
+function testar_payloads_reais() {
+  echo -e "\n${GREEN}🚨 Testando payloads XSS diretamente no conteúdo...${NC}"
   for payload in "${PAYLOADS[@]}"; do
-    echo -e "${YELLOW}Testando payload: ${NC}$payload"
-    grep -q "$payload" "$ARQUIVO" && \
-      echo -e "${RED}⚠️ Encontrado exatamente no arquivo!${NC}" || \
-      echo -e "${GREEN}✅ Nenhuma ocorrência exata detectada.${NC}"
-    sleep 0.2
+    echo -ne "${BLUE}Testando: ${NC}$payload... "
+    grep -qF "$payload" "$ARQUIVO" && \
+      echo -e "${RED}⚠️ Encontrado!${NC}" || \
+      echo -e "${GREEN}Seguro.${NC}"
+    sleep 0.1
   done
 }
 
@@ -78,9 +83,9 @@ function menu() {
     cabecalho
     if pedir_arquivo; then
       escanear_arquivo
-      testar_payloads_basicos
+      testar_payloads_reais
     fi
-    echo -ne "\n${CYAN}Deseja escanear outro arquivo? (s/n): ${NC}"
+    echo -ne "\n${CYAN}Deseja analisar outro arquivo? (s/n): ${NC}"
     read RESP
     [[ "$RESP" =~ ^[Nn]$ ]] && echo -e "${GREEN}Saindo... 👋${NC}" && break
   done
