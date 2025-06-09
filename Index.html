@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Login Vulnerável ⚠️ (Persistente)</title>
+  <title>Site Vulnerável XSS⚠️</title>
   <style>
     body {
       margin: 0;
@@ -18,60 +18,65 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 0 8px rgba(0,0,0,0.1);
-      width: 320px;
+      width: 350px;
+      height: 90vh;
+      overflow-y: auto;
     }
     h2 {
       text-align: center;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
     input, button {
       width: 100%;
       padding: 10px;
-      margin: 8px 0;
+      margin: 6px 0;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
     #messages {
-      margin-top: 10px;
-      color: red;
+      margin-top: 15px;
+    }
+    .msg {
+      padding: 8px;
+      margin-bottom: 6px;
+      background: #f9f9f9;
+      border-radius: 4px;
+      border: 1px solid #ddd;
     }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <h2>Login</h2>
-  <input type="text" id="username" placeholder="Usuário">
-  <input type="password" id="password" placeholder="Senha">
-  <button onclick="doLogin()">Entrar</button>
-  <button onclick="clearData()">Limpar Dados</button>
+  <h2>Mural de Mensagens</h2>
+  <input type="text" id="username" placeholder="Seu nome ou apelido">
+  <input type="text" id="message" placeholder="Sua mensagem (pode testar XSS)">
+  <button onclick="addMessage()">Enviar</button>
+  <button onclick="clearMessages()">Limpar mural</button>
   <div id="messages"></div>
 </div>
 
 <script>
-  // Exibe qualquer conteúdo armazenado (persistente)
+  // Exibe as mensagens armazenadas (XSS persistente)
   window.onload = function() {
-    const stored = localStorage.getItem('xss_data');
+    const stored = localStorage.getItem('mural_xss');
     if (stored) {
-      document.getElementById('messages').innerHTML = stored; // ⚠️ XSS persistente aqui
+      document.getElementById('messages').innerHTML = stored; // ⚠️ Vulnerável a XSS Persistente
     }
   };
 
-  function doLogin() {
-    const user = document.getElementById('username').value;
-    const pass = document.getElementById('password').value;
+  function addMessage() {
+    const user = document.getElementById('username').value || 'Anônimo';
+    const msg = document.getElementById('message').value;
 
-    if (user === 'admin' && pass === '1234') {
-      alert('Login realizado!');
-    } else {
-      // ⚠️ XSS persistente aqui — salvando no LocalStorage
-      localStorage.setItem('xss_data', `Usuário inválido: ${user}`);
-      location.reload(); // Recarrega a página para mostrar o XSS armazenado
-    }
+    const novo = `<div class="msg"><strong>${user}:</strong> ${msg}</div>`;
+    const atual = localStorage.getItem('mural_xss') || '';
+    localStorage.setItem('mural_xss', atual + novo);
+    location.reload(); // Recarrega a página para "mostrar" o novo XSS ou mensagem
   }
 
-  function clearData() {
-    localStorage.removeItem('xss_data');
+  function clearMessages() {
+    localStorage.removeItem('mural_xss');
     location.reload();
   }
 </script>
