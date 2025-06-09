@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Login Vulnerável ⚠️</title>
+  <title>Login Vulnerável ⚠️ (Persistente)</title>
   <style>
     body {
       margin: 0;
@@ -31,9 +31,9 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-    #errorMsg {
-      color: red;
+    #messages {
       margin-top: 10px;
+      color: red;
     }
   </style>
 </head>
@@ -44,10 +44,19 @@
   <input type="text" id="username" placeholder="Usuário">
   <input type="password" id="password" placeholder="Senha">
   <button onclick="doLogin()">Entrar</button>
-  <div id="errorMsg"></div>
+  <button onclick="clearData()">Limpar Dados</button>
+  <div id="messages"></div>
 </div>
 
 <script>
+  // Exibe qualquer conteúdo armazenado (persistente)
+  window.onload = function() {
+    const stored = localStorage.getItem('xss_data');
+    if (stored) {
+      document.getElementById('messages').innerHTML = stored; // ⚠️ XSS persistente aqui
+    }
+  };
+
   function doLogin() {
     const user = document.getElementById('username').value;
     const pass = document.getElementById('password').value;
@@ -55,9 +64,15 @@
     if (user === 'admin' && pass === '1234') {
       alert('Login realizado!');
     } else {
-      // ⚠️ Vulnerável a XSS
-      document.getElementById('errorMsg').innerHTML = `Usuário inválido: ${user}`;
+      // ⚠️ XSS persistente aqui — salvando no LocalStorage
+      localStorage.setItem('xss_data', `Usuário inválido: ${user}`);
+      location.reload(); // Recarrega a página para mostrar o XSS armazenado
     }
+  }
+
+  function clearData() {
+    localStorage.removeItem('xss_data');
+    location.reload();
   }
 </script>
 
