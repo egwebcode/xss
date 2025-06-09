@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Login Vulnerável ⚠️</title>
+  <title>Login Vulnerável - Teste XSS Persistente ⚠️</title>
   <style>
     body {
       margin: 0;
@@ -44,16 +44,15 @@
   <input type="text" id="username" placeholder="Usuário">
   <input type="password" id="password" placeholder="Senha">
   <button onclick="login()">Entrar</button>
-  <button onclick="clearAttack()">Limpar Ataque</button>
   <div id="error"></div>
 </div>
 
 <script>
-  // Mostrar o erro salvo (simulando XSS persistente)
+  // Exibe erro armazenado para QUALQUER usuário (XSS persistente real)
   window.onload = function() {
-    const erro = localStorage.getItem('login_error');
+    const erro = localStorage.getItem('xss_global_error');
     if (erro) {
-      document.getElementById('error').innerHTML = erro; // ⚠️ XSS persistente aqui
+      document.getElementById('error').innerHTML = erro; // ⚠️ Vulnerável a XSS Persistente GLOBAL
     }
   };
 
@@ -61,20 +60,14 @@
     const user = document.getElementById('username').value;
     const pass = document.getElementById('password').value;
 
-    // Apenas para simular: só o usuário admin e senha 123 funcionam
+    // Simulação simples: usuário correto é admin / senha 123
     if (user === 'admin' && pass === '123') {
-      alert('Login bem-sucedido!');
-      localStorage.removeItem('login_error');
+      window.location.href = "dashboard.html";
     } else {
-      // ⚠️ XSS armazenado na mensagem de erro
-      localStorage.setItem('login_error', `Usuário inválido: <b>${user}</b>`);
+      // ⚠️ Armazenando a mensagem de erro globalmente para qualquer usuário ver (com possível XSS)
+      localStorage.setItem('xss_global_error', `Erro: Usuário <b>${user}</b> inválido`);
       location.reload();
     }
-  }
-
-  function clearAttack() {
-    localStorage.removeItem('login_error');
-    location.reload();
   }
 </script>
 
