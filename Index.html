@@ -2,74 +2,65 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Login Vulnerável - Teste XSS Persistente ⚠️</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Política de Segurança de Conteúdo -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; script-src 'self'; frame-ancestors 'none';">
+
+  <title>Aviso de Segurança</title>
+
   <style>
     body {
       margin: 0;
-      background: #f2f2f2;
-      font-family: sans-serif;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background-color: #0d1117;
+      color: #ffffff;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-    }
-    .login-box {
-      background: #fff;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.1);
-      width: 320px;
       text-align: center;
     }
-    h2 {
-      margin-bottom: 15px;
+
+    .container {
+      max-width: 600px;
+      padding: 2rem;
+      background-color: #161b22;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
     }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #ff4c4c;
     }
-    #error {
-      margin-top: 10px;
-      color: red;
+
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .warning {
+      background-color: #ff4c4c;
+      color: #fff;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      display: inline-block;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
   </style>
 </head>
+
 <body>
-
-<div class="login-box">
-  <h2>Login</h2>
-  <input type="text" id="username" placeholder="Usuário">
-  <input type="password" id="password" placeholder="Senha">
-  <button onclick="login()">Entrar</button>
-  <div id="error"></div>
-</div>
-
-<script>
-  // Exibe erro armazenado para QUALQUER usuário (XSS persistente real)
-  window.onload = function() {
-    const erro = localStorage.getItem('xss_global_error');
-    if (erro) {
-      document.getElementById('error').innerHTML = erro; // ⚠️ Vulnerável a XSS Persistente GLOBAL
-    }
-  };
-
-  function login() {
-    const user = document.getElementById('username').value;
-    const pass = document.getElementById('password').value;
-
-    // Simulação simples: usuário correto é admin / senha 123
-    if (user === 'admin' && pass === '123') {
-      window.location.href = "dashboard.html";
-    } else {
-      // ⚠️ Armazenando a mensagem de erro globalmente para qualquer usuário ver (com possível XSS)
-      localStorage.setItem('xss_global_error', `Erro: Usuário <b>${user}</b> inválido`);
-      location.reload();
-    }
-  }
-</script>
-
+  <div class="container">
+    <h1>Aviso de Segurança ⚠️</h1>
+    <p>Por medidas de segurança, você foi redirecionado para esta página pois o site que você tentou acessar foi identificado com possíveis fraudes e golpes.</p>
+    <div class="warning">NÃO INSIRA NENHUMA INFORMAÇÃO PESSOAL</div>
+  </div>
 </body>
 </html>
